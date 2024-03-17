@@ -1,9 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 from time import time
+from wonderwords import RandomWord
 
-
-# sentence = "A quick brown fox jumps over the lazy dog."
 
 class App(tk.Tk):
 
@@ -21,10 +20,9 @@ class TypingSpeedApp(ttk.Frame):
 
         self.start_time = float(0)
 
-        self.sentence = tk.StringVar()
-        self.sentence.set(
-            "A quick brown fox jumps over the lazy dog.")
-        ttk.Label(self, textvariable=self.sentence).grid(column=0, row=0, columnspan=3)
+        self.text = tk.StringVar()
+        self.generate_words(5)
+        ttk.Label(self, textvariable=self.text).grid(column=0, row=0, columnspan=3)
 
         self.wpm_label = tk.StringVar()
         ttk.Label(self, textvariable=self.wpm_label).grid(column=0, row=1, columnspan=3)
@@ -39,23 +37,39 @@ class TypingSpeedApp(ttk.Frame):
         self.timer_running = False
         self.countdown = tk.StringVar()
         ttk.Label(self, textvariable=self.countdown).grid(column=0, row=4, columnspan=3)
+        self.accuracy = tk.StringVar()
+        ttk.Label(self, textvariable=self.accuracy).grid(column=2, row=4, columnspan=2)
+
         self.reset()
 
     def track_wpm(self, *args):
+        user_sentence = self.user_sentence.get()
+        text = self.text.get()
+
+        word_accuracy = []
+        for index, word in enumerate(user_sentence.split()):
+            total_word_len = len(word)
+            matching_chars = [num for num, (e1, e2) in enumerate(zip([*word], [*text.split()[index]])) if e1 == e2]
+            accuracy = (len(matching_chars) / total_word_len) * 100.0
+            word_accuracy.append(accuracy)
+
+        if len(word_accuracy) > 0:
+            mean_accuracy = sum(word_accuracy) / len(word_accuracy)
+            self.accuracy.set(f"Accuracy: {mean_accuracy:.2f}%")
+
         if self.start_time == 0:
             self.start_time = float(time())
 
-        len_of_user_wrds = len(self.user_sentence.get().split())
-        if len_of_user_wrds == 1:
+        len_user_input = len(user_sentence.split())
+        if len_user_input == 1:
             self.start_timer()
+        if self.seconds > 0 and len_user_input > 0:
+            wpm = 60 / (float(time()) - self.start_time) * len_user_input
+            self.wpm_label.set(f"WPM: {wpm:.2f}")
 
-        if self.seconds > 0 and len_of_user_wrds > 0:
-            wpm = 60 / (float(time()) - self.start_time) * len_of_user_wrds
-            self.wpm_label.set(f"Your WPM is: {wpm:.2f}")
-
-        if len(self.user_sentence.get()) == len(self.sentence.get()):
-            len_of_user_wrds = len(self.user_sentence.get().split())
-            wpm = 60 / (float(time()) - self.start_time) * len_of_user_wrds
+        if len(user_sentence) == len(text):
+            len_user_input = len(user_sentence.split())
+            wpm = 60 / (float(time()) - self.start_time) * len_user_input
             self.wpm_label.set(f"Your final WPM is: {wpm:.2f}")
             self.start_time = float(0)
             self.stop()
@@ -83,10 +97,16 @@ class TypingSpeedApp(ttk.Frame):
         self.entry.config(state="enabled")
         self.entry.focus()
         self.wpm_label.set("Please type in the above to calculate your wpm")
+        self.accuracy.set("Accuracy: 0.00%")
 
     def stop(self):
         self.timer_running = False
         self.entry.config(state="disabled")
+
+    def generate_words(self, str_len):
+        words = RandomWord().random_words(str_len, word_max_length=6)
+        words = " ".join(words)
+        self.text.set(words)
 
 
 if __name__ == "__main__":
