@@ -13,6 +13,9 @@ class App(ttk.Window):
         self.title("Typing Speed Test")
         self.default_font = nametofont("TkDefaultFont")
         self.default_font.configure(family="Terminal", size=12, weight=tk.font.BOLD)
+        self.grid_columnconfigure(index=0, weight=1)
+        self.grid_rowconfigure(index=0, weight=1)
+        self.minsize(1500, 450)
 
 
 class TypingSpeedApp(ttk.Frame):
@@ -20,42 +23,45 @@ class TypingSpeedApp(ttk.Frame):
     def __init__(self, parent):
         super().__init__()
         self.app = parent
-        self.grid(pady=12, padx=12, column=0, row=0)
+        self.grid(pady=12, padx=12, column=0, row=0, sticky=("E", "W",))
+        self.grid_columnconfigure(index=(0, 1, 2), weight=1)
+        self.grid_rowconfigure(index=(0, 1, 2), weight=1)
         self.start_time = float(0)
 
         self.target_text = tk.StringVar()
         self.generate_words(5)
         ttk.Label(self, textvariable=self.target_text, font=("Terminal", "36", "bold"), bootstyle="danger").grid(
-            column=0, row=0)
+            column=1, row=0)
 
         self.wpm_label = tk.StringVar()
-        ttk.Label(self, textvariable=self.wpm_label, bootstyle="info").grid(column=0, row=1)
+        ttk.Label(self, textvariable=self.wpm_label, bootstyle="info").grid(column=1, row=1)
 
         self.user_input = tk.StringVar()
         self.user_input.trace("w", self.track_wpm)
-        self.entry = ttk.Entry(self, textvariable=self.user_input, font=("Terminal", "36", "bold"), bootstyle="primary")
-        self.entry.grid(column=0, row=2)
+        self.entry = ttk.Entry(self, textvariable=self.user_input, font=("Terminal", "36"), bootstyle="primary")
+        self.entry.grid(column=1, row=2, pady=12, sticky=("E", "W",))
 
-        ttk.Button(self, text="Reset", command=self.reset).grid(column=0, row=3)
+        ttk.Button(self, text="Reset", command=self.reset).grid(column=1, row=3)
         self.seconds = 0
         self.timer_running = False
         self.countdown = tk.StringVar()
-        ttk.Label(self, textvariable=self.countdown, font=("Helvetica", "36", "bold"), bootstyle="info").grid(
-            column=0, row=4)
+        ttk.Label(self, textvariable=self.countdown, font=("Terminal", "24"), bootstyle="info").grid(
+            column=1, row=4, sticky="W")
         self.accuracy = tk.StringVar()
-        ttk.Label(self, textvariable=self.accuracy, bootstyle="info").grid(column=1, row=4)
+        ttk.Label(self, textvariable=self.accuracy, bootstyle="info").grid(column=1, row=4, sticky="E")
 
+        self.num_prev_words = 0
         self.reset()
 
     def track_wpm(self, *args):
         user_input = self.user_input.get()
         user_wrd_lst = user_input.split()
         target_text = self.target_text.get()
-        num_of_user_words = len(user_wrd_lst)
+        total_user_words = len(user_wrd_lst) + self.num_prev_words
 
-        if len(user_input) > 0:
+        if len(user_input) > 0 and " " not in user_input:
             self.start_timer()
-            wpm = 60 / (float(time()) - self.start_time) * num_of_user_words
+            wpm = 60 / (float(time()) - self.start_time) * total_user_words
             self.wpm_label.set(f"WPM: {wpm:.2f}")
             word_accuracy = []
             for index, word in enumerate(user_wrd_lst):
@@ -66,13 +72,18 @@ class TypingSpeedApp(ttk.Frame):
                 word_accuracy.append(accuracy)
 
             mean_accuracy = sum(word_accuracy) / len(word_accuracy)
-            self.accuracy.set(f"Accuracy: {mean_accuracy:.2f}%")
+            self.accuracy.set(f"Accuracy:\n {mean_accuracy:.2f}%")
 
         if self.start_time == 0:
             self.start_time = float(time())
-
+        # If the user wrote all the pre-generated words, program stops
         if len(user_input) >= len(target_text) and len(user_wrd_lst[-1]) >= len(target_text.split()[-1]) and len(
                 user_wrd_lst) >= len(target_text.split()):
+            self.num_prev_words += 5
+            self.user_input.set("")
+            self.generate_words(5)
+
+        if self.seconds == 30:
             self.stop()
 
     def start_timer(self):
@@ -90,6 +101,7 @@ class TypingSpeedApp(ttk.Frame):
             self.app.after(1000, self.update_timer)
 
     def reset(self):
+        self.num_prev_words = 0
         self.seconds = 0
         self.timer_running = False
         self.start_time = float(0)
@@ -98,9 +110,10 @@ class TypingSpeedApp(ttk.Frame):
         self.entry.config(state="enabled")
         self.entry.focus()
         self.wpm_label.set("Please type in the above to calculate your wpm")
-        self.accuracy.set("Accuracy: 0.00%")
+        self.accuracy.set("Accuracy:\n 0.00%")
 
     def stop(self):
+        self.num_prev_words = 0
         self.start_time = float(0)
         self.timer_running = False
         self.entry.config(state="disabled")
