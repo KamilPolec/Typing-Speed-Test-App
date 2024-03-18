@@ -1,14 +1,18 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter.font import nametofont
+import ttkbootstrap as ttk
 from time import time
 from wonderwords import RandomWord
+from ttkbootstrap import Style
 
 
-class App(tk.Tk):
-
+class App(ttk.Window):
     def __init__(self):
         super().__init__()
+        self.style.theme_use("retro")
         self.title("Typing Speed Test")
+        self.default_font = nametofont("TkDefaultFont")
+        self.default_font.configure(family="Terminal", size=12, weight=tk.font.BOLD)
 
 
 class TypingSpeedApp(ttk.Frame):
@@ -17,28 +21,29 @@ class TypingSpeedApp(ttk.Frame):
         super().__init__()
         self.app = parent
         self.grid(pady=12, padx=12, column=0, row=0)
-
         self.start_time = float(0)
 
         self.target_text = tk.StringVar()
         self.generate_words(5)
-        ttk.Label(self, textvariable=self.target_text).grid(column=0, row=0)
+        ttk.Label(self, textvariable=self.target_text, font=("Terminal", "36", "bold"), bootstyle="danger").grid(
+            column=0, row=0)
 
         self.wpm_label = tk.StringVar()
-        ttk.Label(self, textvariable=self.wpm_label).grid(column=0, row=1)
+        ttk.Label(self, textvariable=self.wpm_label, bootstyle="info").grid(column=0, row=1)
 
         self.user_input = tk.StringVar()
         self.user_input.trace("w", self.track_wpm)
-        self.entry = ttk.Entry(self, textvariable=self.user_input)
+        self.entry = ttk.Entry(self, textvariable=self.user_input, font=("Terminal", "36", "bold"), bootstyle="primary")
         self.entry.grid(column=0, row=2)
 
         ttk.Button(self, text="Reset", command=self.reset).grid(column=0, row=3)
         self.seconds = 0
         self.timer_running = False
         self.countdown = tk.StringVar()
-        ttk.Label(self, textvariable=self.countdown).grid(column=0, row=4)
+        ttk.Label(self, textvariable=self.countdown, font=("Helvetica", "36", "bold"), bootstyle="info").grid(
+            column=0, row=4)
         self.accuracy = tk.StringVar()
-        ttk.Label(self, textvariable=self.accuracy).grid(column=1, row=4)
+        ttk.Label(self, textvariable=self.accuracy, bootstyle="info").grid(column=1, row=4)
 
         self.reset()
 
