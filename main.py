@@ -3,7 +3,6 @@ from tkinter.font import nametofont
 import ttkbootstrap as ttk
 from time import time
 from wonderwords import RandomWord
-from ttkbootstrap import Style
 
 
 class App(ttk.Window):
@@ -48,6 +47,7 @@ class TypingSpeedApp(ttk.Frame):
         ttk.Label(self, textvariable=self.countdown, font=("Terminal", "24"), bootstyle="info").grid(
             column=1, row=4, sticky="W")
         self.accuracy = tk.StringVar()
+        self.mean_accuracy = 0.00
         ttk.Label(self, textvariable=self.accuracy, bootstyle="info").grid(column=1, row=4, sticky="E")
 
         self.num_prev_words = 0
@@ -59,7 +59,7 @@ class TypingSpeedApp(ttk.Frame):
         target_text = self.target_text.get()
         total_user_words = len(user_wrd_lst) + self.num_prev_words
 
-        if len(user_input) > 0 and " " not in user_input:
+        if len(user_wrd_lst) > 0:
             self.start_timer()
             wpm = 60 / (float(time()) - self.start_time) * total_user_words
             self.wpm_label.set(f"WPM: {wpm:.2f}")
@@ -71,8 +71,7 @@ class TypingSpeedApp(ttk.Frame):
                 accuracy = (len(matching_chars) / total_word_len) * 100.0
                 word_accuracy.append(accuracy)
 
-            mean_accuracy = sum(word_accuracy) / len(word_accuracy)
-            self.accuracy.set(f"Accuracy:\n {mean_accuracy:.2f}%")
+            self.mean_accuracy = sum(word_accuracy) / len(word_accuracy)
 
         if self.start_time == 0:
             self.start_time = float(time())
@@ -83,7 +82,7 @@ class TypingSpeedApp(ttk.Frame):
             self.user_input.set("")
             self.generate_words(5)
 
-        if self.seconds == 30:
+        if self.seconds == 60:
             self.stop()
 
     def start_timer(self):
@@ -93,6 +92,7 @@ class TypingSpeedApp(ttk.Frame):
 
     def update_timer(self):
         if self.timer_running:
+            self.accuracy.set(f"Accuracy:\n {self.mean_accuracy:.2f}%")
             self.seconds += 1
             minutes = self.seconds // 60
             seconds = self.seconds % 60
